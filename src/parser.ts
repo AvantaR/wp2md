@@ -41,17 +41,17 @@ export class Parser {
       }
     }
 
-    const writeToFile = posts.map(async (post) => {
+    const writeToFiles = posts.map((post) => {
       let output = `---\n`;
       output += post.frontMatter;
       output += '---\n\n';
       output += post.content;
       output += '\n';
 
-      return await fs.writeFile(`posts/${dayjs(post.pubDate).format('YYYY-MM-DD')}-${post.slug}.md`, output);
+      return fs.writeFile(`posts/${dayjs(post.pubDate).format('YYYY-MM-DD')}-${post.slug}.md`, output);
     });
 
-    // Promise.all(writeToFile);
+    Promise.all(writeToFiles);
   }
 
   private getSlug(link): string {
