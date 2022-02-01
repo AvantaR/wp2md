@@ -54,7 +54,7 @@ export class Parser {
     Promise.all(writeToFiles);
   }
 
-  private getSlug(link): string {
+  private getSlug(link: string): string {
     return decodeURIComponent(new URL(link).pathname.replace(/\//g, ''));
   }
 }
