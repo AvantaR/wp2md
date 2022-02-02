@@ -11,24 +11,39 @@ export class Parser {
 
     const nhm = new NodeHtmlMarkdown();
 
-    const posts: { id: number; pubDate: string; slug: string; frontMatter: string; content: string }[] =
+    const posts: { id: number; postDate: string; slug: string; frontMatter: string; content: string }[] =
       parsedXml.rss.channel.item
-        .map((item) => {
+        .map((item: any) => {
           return {
             title: item.title,
             link: item.link,
             postId: item['wp:post_id'],
-            slug: this.getSlug(item.link),
-            pubDate: item.pubDate,
+            slug: this.getSlug(item),
+            pubDate: item.pubDate !== '' ? item.pubDate : undefined,
+            postDate: item['wp:post_date'],
             content: nhm.translate(item['content:encoded']),
+            status: item['wp:status'],
           };
         })
         .map((post: Post) => {
+          const metadata = {
+            title: post.title,
+            link: post.link,
+            slug: post.slug,
+            postDate: post.postDate,
+            pubDate: post.pubDate ?? undefined,
+          };
+          console.log(post.pubDate);
+
+          if (post.status === 'draft') {
+            metadata['draft'] = true;
+          }
+
           return {
             id: post.postId,
             slug: post.slug,
-            pubDate: post.pubDate,
-            frontMatter: yaml.dump({ title: post.title, link: post.link, slug: post.slug, pubDate: post.pubDate }),
+            postDate: post.postDate,
+            frontMatter: yaml.dump(metadata),
             content: post.content,
           };
         });
@@ -48,14 +63,28 @@ export class Parser {
       output += post.content;
       output += '\n';
 
-      return fs.writeFile(`posts/${dayjs(post.pubDate).format('YYYY-MM-DD')}-${post.slug}.md`, output);
+      return fs.writeFile(`posts/${dayjs(post.postDate).format('YYYY-MM-DD')}-${post.slug}.md`, output);
     });
 
     Promise.all(writeToFiles);
   }
 
-  private getSlug(link: string): string {
+  private getSlug(item: { title: string; link: string }): string {
+    const slugFromLink = this.getSlugFromLink(item.link);
+
+    return slugFromLink !== '' ? slugFromLink : this.getSlugFromTitle(item.title);
+  }
+
+  private getSlugFromLink(link: string): string {
     return decodeURIComponent(new URL(link).pathname.replace(/\//g, ''));
+  }
+
+  private getSlugFromTitle(title: string): string {
+    console.log(title);
+    return title
+      .toLowerCase()
+      .replace(/ /g, '-')
+      .replace(/[^\w-]+/g, '');
   }
 }
 
