@@ -33,7 +33,6 @@ export class Parser {
             postDate: post.postDate,
             pubDate: post.pubDate ?? undefined,
           };
-          console.log(post.pubDate);
 
           if (post.status === 'draft') {
             metadata['draft'] = true;
