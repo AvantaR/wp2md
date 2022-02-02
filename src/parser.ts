@@ -6,66 +6,46 @@ import { Post } from '@app/post';
 import * as dayjs from 'dayjs';
 
 export class Parser {
-  async parse(xmlContent: string) {
+  parse(xmlContent: string): { id: number; postDate: string; slug: string; frontMatter: string; content: string }[] {
     const parsedXml = xmlParser.parse(xmlContent);
 
     const nhm = new NodeHtmlMarkdown();
+    const posts = parsedXml.rss.channel.item;
 
-    const posts: { id: number; postDate: string; slug: string; frontMatter: string; content: string }[] =
-      parsedXml.rss.channel.item
-        .map((item: any) => {
-          return {
-            title: item.title,
-            link: item.link,
-            postId: item['wp:post_id'],
-            slug: this.getSlug(item),
-            pubDate: item.pubDate !== '' ? item.pubDate : undefined,
-            postDate: item['wp:post_date'],
-            content: nhm.translate(item['content:encoded']),
-            status: item['wp:status'],
-          };
-        })
-        .map((post: Post) => {
-          const metadata = {
-            title: post.title,
-            link: post.link,
-            slug: post.slug,
-            postDate: post.postDate,
-            pubDate: post.pubDate ?? undefined,
-          };
+    return posts
+      .map((item: any) => {
+        return {
+          title: item.title,
+          link: item.link,
+          postId: item['wp:post_id'],
+          slug: this.getSlug(item),
+          pubDate: item.pubDate !== '' ? item.pubDate : undefined,
+          postDate: item['wp:post_date'],
+          content: nhm.translate(item['content:encoded']),
+          status: item['wp:status'],
+        };
+      })
+      .map((post: Post) => {
+        const metadata = {
+          title: post.title,
+          link: post.link,
+          slug: post.slug,
+          postDate: post.postDate,
+          pubDate: post.pubDate ?? undefined,
+        };
 
-          if (post.status === 'draft') {
-            metadata['draft'] = true;
-          }
+        if (post.status === 'draft') {
+          metadata['draft'] = true;
+        }
 
-          return {
-            id: post.postId,
-            slug: post.slug,
-            postDate: post.postDate,
-            frontMatter: yaml.dump(metadata),
-            content: post.content,
-          };
-        });
-
-    try {
-      await fs.mkdir('posts', {});
-    } catch (err) {
-      if (err.code === 'EEXIST') {
-        console.log(`Directory exists, skipped creating`);
-      }
-    }
-
-    const writeToFiles = posts.map((post) => {
-      let output = `---\n`;
-      output += post.frontMatter;
-      output += '---\n\n';
-      output += post.content;
-      output += '\n';
-
-      return fs.writeFile(`posts/${dayjs(post.postDate).format('YYYY-MM-DD')}-${post.slug}.md`, output);
-    });
-
-    Promise.all(writeToFiles);
+        return {
+          id: post.postId,
+          slug: post.slug,
+          postDate: post.postDate,
+          frontMatter: yaml.dump(metadata),
+          content: post.content,
+        };
+      });
   }
 
   private getSlug(item: { title: string; link: string }): string {
@@ -79,7 +59,6 @@ export class Parser {
   }
 
   private getSlugFromTitle(title: string): string {
-    console.log(title);
     return title
       .toLowerCase()
       .replace(/ /g, '-')
