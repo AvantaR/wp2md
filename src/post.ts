@@ -7,4 +7,5 @@ export interface Post {
   postId: number;
   status: string;
   content: string;
+  images: string[];
 }

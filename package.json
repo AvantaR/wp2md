@@ -5,6 +5,7 @@
   "author": "Krzysztof Szala",
   "private": true,
   "license": "UNLICENSED",
+  "type": "module",
   "scripts": {
     "build": "tsc && tsc-alias",
     "build:watch": "tsc -w & tsc-alias -w",
@@ -14,16 +15,24 @@
   },
   "dependencies": {
     "@types/js-yaml": "^4.0.5",
+    "@types/node-emoji": "^1.8.1",
+    "chalk": "^5.0.0",
+    "commander": "^9.0.0",
+    "consola": "^2.15.3",
     "dayjs": "^1.10.7",
+    "download-file": "^0.1.5",
     "fast-xml-parser": "^3.19.0",
     "js-yaml": "^4.1.0",
+    "node-emoji": "^1.11.0",
     "node-html-markdown": "^1.1.3",
     "tsc-alias": "^1.3.7"
   },
   "devDependencies": {
+    "@types/downloadjs": "^1.4.3",
     "@types/jest": "^26.0.24",
     "jest": "^27.0.6",
     "ts-jest": "^27.0.3",
+    "ts-node": "^10.5.0",
     "typescript": "^4.3.5"
   }
 }

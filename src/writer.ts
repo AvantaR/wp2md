@@ -1,10 +1,17 @@
-import * as dayjs from 'dayjs';
-import * as fs from 'fs/promises';
+import { PostParsed } from '@app/parser';
+import dayjs from 'dayjs';
+import fs from 'fs/promises';
+import emoji from 'node-emoji';
+import downloadCallback from 'download-file';
+import util from 'util';
+import consola from 'consola';
+
+const download = util.promisify(downloadCallback);
 
 export class Writer {
   private constructor() {}
 
-  private posts: [];
+  private posts: Promise<void>[];
 
   static async init() {
     try {
@@ -18,10 +25,16 @@ export class Writer {
     return new Writer();
   }
 
-  promise(posts: any): Writer {
+  promise(posts: PostParsed[]): Writer {
     const dir = 'posts/';
 
     this.posts = posts.map((post) => {
+      // post.images.forEach(async (image) => {
+      //   const test = await download(image, { directory: './images' });
+
+      //   console.log(test);
+      // });
+
       let output = `---\n`;
       output += post.frontMatter;
       output += '---\n\n';
@@ -37,15 +50,14 @@ export class Writer {
   }
 
   async keep() {
-    const results: { status: string; value: any }[] = await Promise.allSettled(this.posts);
+    const results = await Promise.allSettled(this.posts);
 
     const all = results.length;
     const failed = results.filter((result) => result.status === 'rejected').length;
     const success = results.length - failed;
-
-    console.log(`All: ${all}`);
-    console.log(`Succes: ${success}`);
-    console.log(`Failed: ${failed}`);
+    consola.success(`All: ${all}`);
+    consola.success(`Succes: ${success}`);
+    consola.info(`Failed: ${failed}`);
   }
 
   async save(name: string, output: string): Promise<void> {

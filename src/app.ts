@@ -1,22 +1,24 @@
-import { Parser } from '@app/parser';
-import { Writer } from '@app/writer';
-import * as fs from 'fs/promises';
+import { Command } from 'commander';
+import { Parser } from './parser.js';
+import { Runner } from './runner.js';
+import consola from 'consola';
 
-class App {
-  constructor(private parser: Parser) {}
+(async () => {
+  try {
+    const program = new Command();
 
-  async run(): Promise<void> {
-    const posts = this.parser.parse(await this.loadFile());
-    await (await Writer.init()).promise(posts).keep();
-    console.log('My work is done!');
+    program.name('wp2md').description('CLI to converting Wordpress Export File to Markdown Format');
+    program.option('-i, --input <string>', 'input file', 'export.xml');
+
+    program.parse(process.argv);
+
+    const options = { input: program.opts().input };
+
+    const parser = new Parser();
+    const app = new Runner(options, parser);
+
+    await app.run();
+  } catch (error) {
+    consola.error(error.message);
   }
-
-  private async loadFile(): Promise<string> {
-    return fs.readFile('test.xml', 'utf8');
-  }
-}
-
-const parser = new Parser();
-const app = new App(parser);
-
-app.run();
+})();

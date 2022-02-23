@@ -1,15 +1,24 @@
 import * as fs from 'fs/promises';
 import * as xmlParser from 'fast-xml-parser';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
+import * as nodeHtmlMarkdown from 'node-html-markdown';
 import * as yaml from 'js-yaml';
 import { Post } from '@app/post';
 import * as dayjs from 'dayjs';
 
+export type PostParsed = {
+  id: number;
+  postDate: string;
+  slug: string;
+  frontMatter: string;
+  content: string;
+  images: string[];
+};
+
 export class Parser {
-  parse(xmlContent: string): { id: number; postDate: string; slug: string; frontMatter: string; content: string }[] {
+  parse(xmlContent: string): PostParsed[] {
     const parsedXml = xmlParser.parse(xmlContent);
 
-    const nhm = new NodeHtmlMarkdown();
+    const nhm = new nodeHtmlMarkdown.NodeHtmlMarkdown();
     const posts = parsedXml.rss.channel.item;
 
     return posts
@@ -23,6 +32,9 @@ export class Parser {
           postDate: item['wp:post_date'],
           content: nhm.translate(item['content:encoded']),
           status: item['wp:status'],
+          images: this.getImages(item).map((image) => {
+            return image[1];
+          }),
         };
       })
       .map((post: Post) => {
@@ -44,8 +56,13 @@ export class Parser {
           postDate: post.postDate,
           frontMatter: yaml.dump(metadata),
           content: post.content,
+          images: post.images,
         };
       });
+  }
+
+  private getImages(item: any): any[] {
+    return [...item['content:encoded'].matchAll(/<img[^>]*src="(.+?\.(?:gif|jpe?g|png))"[^>]*>/gi)];
   }
 
   private getSlug(item: { title: string; link: string }): string {
@@ -65,13 +82,3 @@ export class Parser {
       .replace(/[^\w-]+/g, '');
   }
 }
-
-// async parsePost(xmlPost: string): Promise<Post> {
-//   const parsedXml = xmlParser.parse(xmlPost);
-//   console.log(parsedXml);
-//   return {
-//     title: parsedXml.item.title,
-//     postId: parsedXml.item['wp:post_id'],
-//     content: parsedXml.item['content:encoded'],
-//   };
-// }
