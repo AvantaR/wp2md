@@ -5,6 +5,7 @@ import emoji from 'node-emoji';
 import downloadCallback from 'download-file';
 import util from 'util';
 import consola from 'consola';
+import { oraPromise } from 'ora';
 
 const download = util.promisify(downloadCallback);
 
@@ -29,11 +30,9 @@ export class Writer {
     const dir = 'posts/';
 
     this.posts = posts.map((post) => {
-      // post.images.forEach(async (image) => {
-      //   const test = await download(image, { directory: './images' });
-
-      //   console.log(test);
-      // });
+      post.images.forEach(async (image) => {
+        await oraPromise(download(image, { directory: './images' }), { text: `Download image ${image}` });
+      });
 
       let output = `---\n`;
       output += post.frontMatter;
@@ -50,7 +49,7 @@ export class Writer {
   }
 
   async keep() {
-    const results = await Promise.allSettled(this.posts);
+    const results = await oraPromise(Promise.allSettled(this.posts));
 
     const all = results.length;
     const failed = results.filter((result) => result.status === 'rejected').length;
